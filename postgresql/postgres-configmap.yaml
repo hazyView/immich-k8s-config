@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+  namespace: immich # We'll deploy Immich and its DB in an 'immich' namespace
+data:
+  POSTGRES_DB: immich
+  POSTGRES_USER: immich_user

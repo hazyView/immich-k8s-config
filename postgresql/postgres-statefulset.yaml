@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: immich
+spec:
+  serviceName: "postgres-svc"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      initContainers:
+      - name: install-pgvector
+        image: alpine/git # A small image with git
+        # If using a pg image that doesn't have pgvector pre-installed and you want to build it:
+        # This is a simplified example. For a robust pgvector setup, using a pre-built image like 'ankane/pgvector' or 'pgvector/pgvector' is highly recommended.
+        # The official Immich docker-compose uses 'tensorchord/pgvecto-rs:pg14-v0.1.11' which is pgvector Rust version.
+        # For simplicity with standard Postgres, we'll assume a pgvector compatible image or use an image that allows easy extension loading.
+        # Let's use an image that supports pgvector directly or makes it easy to enable.
+        # The 'tensorchord/pgvecto-rs' image is a good choice as used by Immich.
+        # If using a standard postgres image, you'd need to compile/install pgvector.
+        # For this guide, we'll use 'tensorchord/pgvecto-rs' which comes with it.
+        # So, the initContainer might not be strictly needed if the main container image has it.
+        # However, if you needed to run SQL commands on first init:
+        command: ['sh', '-c', "echo 'Init container placeholder for pgvector setup if needed. For tensorchord/pgvecto-rs, it should be available.'"]
+      containers:
+      - name: postgres
+        image: tensorchord/pgvecto-rs:pg14-v0.2.0 # Immich recommended image with pgvector
+        ports:
+        - containerPort: 5432
+        envFrom:
+        - configMapRef:
+            name: postgres-config
+        - secretRef:
+            name: postgres-secret
+        env:
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        # Security Context for the Pod and Container
+        securityContext:
+          runAsUser: 999 # PostgreSQL user ID in the container
+          runAsGroup: 999
+          fsGroup: 999
+      securityContext: # PodSecurityContext
+        fsGroup: 999 # Ensures the volume is writable by the postgres user
+  volumeClaimTemplates:
+  - metadata:
+      name: postgres-storage
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: local-path # Or your default
+      resources:
+        requests:
+          storage: 10Gi

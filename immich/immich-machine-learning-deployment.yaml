@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich-machine-learning
+  namespace: immich
+  labels:
+    app: immich-machine-learning
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: immich-machine-learning
+  template:
+    metadata:
+      labels:
+        app: immich-machine-learning
+    spec:
+      containers:
+      - name: immich-machine-learning
+        image: ghcr.io/immich-app/immich-machine-learning:release
+        envFrom:
+        - configMapRef:
+            name: immich-config
+        - secretRef:
+            name: immich-secret
+        # ML specific env vars if any
+        volumeMounts: # ML might need access to a model cache or library
+        - name: immich-library # If it reads directly
+          mountPath: /usr/src/app/upload
+          readOnly: true
+        # - name: ml-cache # For models
+        #   mountPath: /cache
+        resources:
+          requests:
+            cpu: "1"
+            memory: "2Gi"
+          limits:
+            cpu: "4" # Can be very CPU/GPU intensive
+            memory: "8Gi"
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+      volumes:
+      - name: immich-library
+        persistentVolumeClaim:
+          claimName: immich-library-pvc
+      # - name: ml-cache
+      #   emptyDir: {} # Or a PVC for persistent model cache
+      securityContext:
+        fsGroup: 1001

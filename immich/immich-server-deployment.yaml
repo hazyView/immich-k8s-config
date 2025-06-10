@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich-server
+  namespace: immich
+  labels:
+    app: immich-server
+spec:
+  replicas: 1 # Can be scaled later
+  selector:
+    matchLabels:
+      app: immich-server
+  template:
+    metadata:
+      labels:
+        app: immich-server
+    spec:
+      containers:
+      - name: immich-server
+        image: ghcr.io/immich-app/immich-server:release # Use the latest stable release tag
+        ports:
+        - containerPort: 3001
+        envFrom:
+        - configMapRef:
+            name: immich-config
+        - secretRef:
+            name: immich-secret
+        env:
+        # Specific env vars for server if any, most are common
+        - name: IMMICH_WEB_URL # URL for web UI, e.g., http://immich.local.dev/
+          value: "http://immich.local.dev" # Adjust if using a different Ingress host
+        - name: IMMICH_SERVER_URL # URL for server API, e.g., http://immich.local.dev/api
+          value: "http://immich.local.dev/api" # Adjust if using a different Ingress host
+        volumeMounts:
+        - name: immich-library
+          mountPath: /usr/src/app/upload # Path where Immich stores uploads
+        # - name: immich-thumbs # If you want separate storage for thumbnails
+        #   mountPath: /usr/src/app/thumbs
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "512Mi"
+          limits:
+            cpu: "4"
+            memory: "8Gi"
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+          # runAsUser: 1001 # Define a non-root user if the image supports it
+          # runAsGroup: 1001
+          # readOnlyRootFilesystem: true # Might be challenging with /usr/src/app/upload needing writes
+      volumes:
+      - name: immich-library
+        persistentVolumeClaim:
+          claimName: immich-library-pvc
+      # - name: immich-thumbs
+      #   persistentVolumeClaim:
+      #     claimName: immich-thumbs-pvc # Create this PVC if used
+      # Pod Security Context
+      securityContext:
+        fsGroup: 1001 # Group that owns the PVC mount path
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: immich-server-svc
+  namespace: immich
+spec:
+  selector:
+    app: immich-server
+  ports:
+  - protocol: TCP
+    port: 3001
+    targetPort: 3001

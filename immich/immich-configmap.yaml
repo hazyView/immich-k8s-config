@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: immich-config
+  namespace: immich
+data:
+  # Database connection (ensure these match your postgres setup)
+  DB_HOSTNAME: "postgres-svc.immich.svc.cluster.local" # K8s service DNS
+  DB_USERNAME: "immich_user" # From postgres-config
+  DB_DATABASE_NAME: "immich"   # From postgres-config
+  # Redis connection
+  REDIS_HOSTNAME: "redis-svc.immich.svc.cluster.local" # K8s service DNS
+  REDIS_PORT: "6379"
+  # Other Immich settings (refer to Immich docs for all options)
+  NODE_ENV: "production"
+  LOG_LEVEL: "info" # Recommended: info, debug, error

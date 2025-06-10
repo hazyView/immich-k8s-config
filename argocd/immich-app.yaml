@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: immich-stack
+  namespace: argocd # This application resource itself lives in argocd namespace
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/hazyView/immich-k8s-config.git # e.g., https://github.com/yourusername/immich-k8s-config.git
+    targetRevision: HEAD # Or 'main' branch
+    path: . # Root of the repository, ArgoCD will find Kustomizations or individual YAMLs
+    kustomize:
+      # Optional: specify kustomize version if needed
+      # version: v4.5.7
+      # Optional: specify name prefix or suffix for all resources managed by this app
+      # namePrefix: dev-
+      #  commonAnnotations:
+      #  gitops-managed-by: argocd
+  destination:
+    server: https://kubernetes.default.svc # Deploy to the same cluster ArgoCD is in
+    # Namespace is typically defined within the manifests or kustomizations themselves.
+    # If all resources are in 'immich', you can specify it here, but it's better handled by kustomizations.
+    namespace: immich # This will be the default namespace if not specified in manifests.
+                     # However, our kustomizations already set it.
+  syncPolicy:
+    automated:
+      prune: true    # Delete resources that are no longer in Git
+      selfHeal: true # Reconcile if live state deviates from Git
+    syncOptions:
+    - CreateNamespace=true # Create the 'immich' namespace if it doesn't exist (and others if defined)

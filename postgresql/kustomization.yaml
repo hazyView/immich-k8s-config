@@ -1,0 +1,9 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: immich # Apply namespace to all resources
+resources:
+  - postgres-configmap.yaml
+  - postgres-secret.yaml
+  # - postgres-pvc.yaml # PVC is part of StatefulSet volumeClaimTemplates
+  - postgres-statefulset.yaml
+  - postgres-service.yaml

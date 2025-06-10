@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich-microservices
+  namespace: immich
+  labels:
+    app: immich-microservices
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: immich-microservices
+  template:
+    metadata:
+      labels:
+        app: immich-microservices
+    spec:
+      containers:
+      - name: immich-microservices
+        image: ghcr.io/immich-app/immich-microservices:release
+        envFrom:
+        - configMapRef:
+            name: immich-config
+        - secretRef:
+            name: immich-secret
+        volumeMounts:
+        - name: immich-library
+          mountPath: /usr/src/app/upload
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+          limits:
+            cpu: "2"
+            memory: "4Gi" # Transcoding can be memory intensive
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+      volumes:
+      - name: immich-library
+        persistentVolumeClaim:
+          claimName: immich-library-pvc
+      securityContext:
+        fsGroup: 1001

@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich-web
+  namespace: immich
+  labels:
+    app: immich-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: immich-web
+  template:
+    metadata:
+      labels:
+        app: immich-web
+    spec:
+      containers:
+      - name: immich-web
+        image: ghcr.io/immich-app/immich-web:release
+        ports:
+        - containerPort: 3000 # Default port for Immich web
+        envFrom: # Web might need fewer env vars, primarily API endpoint
+        - configMapRef:
+            name: immich-config # For IMMICH_SERVER_URL if configured via env
+        env:
+        - name: IMMICH_SERVER_URL
+          value: "http://immich-server-svc.immich.svc.cluster.local:3001" # Internal K8s service URL
+        # Or if web needs to know its public URL for some assets:
+        # - name: IMMICH_WEB_URL
+        #   value: "http://immich.local.dev"
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "0.5"
+            memory: "256Mi"
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop: ["ALL"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: immich-web-svc
+  namespace: immich
+spec:
+  selector:
+    app: immich-web
+  ports:
+  - protocol: TCP
+    port: 80 # Service port, can be 80
+    targetPort: 3000 # Container port

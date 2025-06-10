@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: immich
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:6.2-alpine # Use a specific, vetted version
+        ports:
+        - containerPort: 6379
+        resources:
+          limits:
+            memory: "256Mi"
+            cpu: "0.5"
+          requests:
+            memory: "128Mi"
+            cpu: "0.1"
+        securityContext:
+          runAsUser: 1000
+          runAsGroup: 1000
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true # If possible, may need volume for data
+          capabilities:
+            drop: ["ALL"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-svc
+  namespace: immich
+spec:
+  ports:
+  - port: 6379
+  selector:
+    app: redis
