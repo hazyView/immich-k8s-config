@@ -16,7 +16,7 @@ jobs:
       uses: actions/checkout@v3
 
     - name: Setup Kubeval
-      uses: instrumenta/kubeval-action@v1 # Or use Kustomize build + kubeconform
+      uses: instrumental/kubeval-action@v1 # Or use Kustomize build + kubeconform
       with:
         files: . # Directory containing your manifests
 
