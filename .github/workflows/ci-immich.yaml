@@ -15,11 +15,11 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Setup Kubeval
-      uses: instrumental/kubeval-action@v1 # Or use Kustomize build + kubeconform
+    - name: Kubeconform
+      uses: docker://ghcr.io/yannh/kubeconform:latest
       with:
-        files: . # Directory containing your manifests
-
+        args: -strict -summary ./
+        
     # Example using Kustomize build and kubeconform (more robust)
     - name: Setup Kustomize
       uses: imranismail/setup-kustomize@v2
